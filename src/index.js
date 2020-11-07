@@ -1,15 +1,12 @@
 const express = require("express");
 require("./db/mongoose"); //RUN
+const transactionsListsRouter = require("./routers/transactionsLists");
 
 const app = express();
 const port = process.env.PORT;
 
 app.use(express.json());
-
-app.get("/api/transactions-lists/:year/:month", (req, res) => {
-   const { year, month } = req.params;
-   res.send({ year, month });
-});
+app.use(transactionsListsRouter);
 
 app.listen(port, () => {
    console.log(`Server up on port ${port}`);
