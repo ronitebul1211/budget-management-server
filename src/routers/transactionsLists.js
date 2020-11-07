@@ -3,9 +3,12 @@ const TransactionsList = require("../models/transactionsList");
 
 const router = new express.Router();
 
-/** GET transactions list by month, year
- * (404) - List of transactions for the month and year does not exist
- * (500) - other errors
+//TODO: query params to response with month status & month debit split by categories
+
+/** GET: transactions list by month, year.
+ * RESPONSE: transactions list
+ * (404) - List does not exist
+ * (500) - errors + message
  */
 router.get("/api/transactions-lists/:year/:month", async (req, res) => {
    try {
@@ -16,6 +19,28 @@ router.get("/api/transactions-lists/:year/:month", async (req, res) => {
       }
       res.send(transactionsList);
    } catch (err) {
+      res.status(500).send(err.message);
+   }
+});
+
+/** POST: transaction in the appropriate list by month and year.
+ * RESPONSE: updated transactions list
+ * (500) - errors + message
+ */
+router.post("/api/transactions-lists/:year/:month", async (req, res) => {
+   try {
+      let transactionsList;
+      const { month, year } = req.params;
+
+      transactionsList = await TransactionsList.findOne({ month, year });
+      if (!transactionsList) {
+         transactionsList = new TransactionsList({ month, year });
+      }
+      transactionsList.data.push({ ...req.body });
+      await transactionsList.save();
+      res.send(transactionsList);
+   } catch (err) {
+      console.log(err);
       res.status(500).send(err.message);
    }
 });
