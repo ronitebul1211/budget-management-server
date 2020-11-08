@@ -6,9 +6,9 @@ const router = new express.Router();
 //TODO: query params to response with month status & month debit split by categories
 
 /** GET: transactions list by month, year.
- * RESPONSE: transactions list
- * (404) - List does not exist
- * (500) - errors + message
+ * success: (200) response with transactions list
+ * errors:  (404) list does not exist
+ *          (500) error + message
  */
 router.get("/api/transactions-lists/:year/:month", async (req, res) => {
    try {
@@ -17,28 +17,54 @@ router.get("/api/transactions-lists/:year/:month", async (req, res) => {
       if (!transactionsList) {
          return res.status(404).send();
       }
-      res.send(transactionsList);
+      res.status(200).send(transactionsList);
    } catch (err) {
       res.status(500).send(err.message);
    }
 });
 
-/** POST: transaction in the appropriate list by month and year.
- * RESPONSE: updated transactions list
- * (500) - errors + message
+/** POST: transaction in the appropriate list by month, year.
+ * success: (201) response with updated transactions list
+ * errors:  (500) - error + message
  */
 router.post("/api/transactions-lists/:year/:month", async (req, res) => {
    try {
       let transactionsList;
       const { month, year } = req.params;
-
       transactionsList = await TransactionsList.findOne({ month, year });
       if (!transactionsList) {
          transactionsList = new TransactionsList({ month, year });
       }
       transactionsList.data.push({ ...req.body });
       await transactionsList.save();
-      res.send(transactionsList);
+      res.status(201).send(transactionsList);
+   } catch (err) {
+      res.status(500).send(err.message);
+   }
+});
+
+/** DELETE: transaction in the appropriate list by month, year, transaction id.
+ * success: (200) response with updated transactions list
+ *          (204) response without content when the removed transaction was the last in the list (transactions list removed)
+ * errors:  (500) - error + message
+ */
+router.delete("/api/transactions-lists/:year/:month/:transactionId", async (req, res) => {
+   try {
+      const { month, year, transactionId } = req.params;
+      transactionsList = await TransactionsList.findOne({ month, year });
+      if (!transactionsList) {
+         return res.status(404).send();
+      }
+      const transaction = transactionsList.data.id(transactionId).remove();
+      if (!transaction) {
+         return res.status(404).send();
+      }
+      if (transactionsList.data.length === 0) {
+         await transactionsList.remove();
+         return res.status(204).send();
+      }
+      await transactionsList.save();
+      res.status(200).send(transactionsList);
    } catch (err) {
       console.log(err);
       res.status(500).send(err.message);
