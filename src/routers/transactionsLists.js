@@ -24,10 +24,12 @@ router.get("/api/transactions-lists/:year/:month", async (req, res) => {
 });
 
 /** POST: transaction in the appropriate list by month, year.
+ * request body: description, type, totalPayment, paymentMethod, date, category
  * success: (201) response with updated transactions list
  * errors:  (500) - error + message
  */
 router.post("/api/transactions-lists/:year/:month", async (req, res) => {
+   //TODO crete first subdoc, than if ok post on list
    try {
       let transactionsList;
       const { month, year } = req.params;
@@ -46,7 +48,7 @@ router.post("/api/transactions-lists/:year/:month", async (req, res) => {
 /** DELETE: transaction in the appropriate list by month, year, transaction id.
  * success: (200) response with updated transactions list
  *          (204) response without content when the removed transaction was the last in the list (transactions list removed)
- * errors:  (500) - error + message
+ * errors:  (500) error + message
  */
 router.delete("/api/transactions-lists/:year/:month/:transactionId", async (req, res) => {
    try {
@@ -66,7 +68,40 @@ router.delete("/api/transactions-lists/:year/:month/:transactionId", async (req,
       await transactionsList.save();
       res.status(200).send(transactionsList);
    } catch (err) {
-      console.log(err);
+      res.status(500).send(err.message);
+   }
+});
+
+/** PUT: update transaction in the appropriate list by month, year, transaction id
+ * request body: description, type, totalPayment, paymentMethod, date, category
+ * success: (200) response with updated transactions list
+ *          (404) transactions list / month / year does not exist
+ * errors:  (500) error + message
+ */
+router.put("/api/transactions-lists/:year/:month/:transactionId", async (req, res) => {
+   const { month, year, transactionId } = req.params;
+   try {
+      const updatedList = await TransactionsList.findOneAndUpdate(
+         { month, year, "data._id": transactionId },
+         {
+            $set: {
+               "data.$.description": req.body.description,
+               "data.$.type": req.body.type,
+               "data.$.totalPayment": req.body.totalPayment,
+               "data.$.paymentMethod": req.body.paymentMethod,
+               "data.$.date": req.body.date,
+               "data.$.category": req.body.category,
+            },
+         },
+         { new: true, runValidators: true },
+      );
+
+      if (!updatedList) {
+         return res.status(404).send();
+      }
+
+      res.status(200).send(updatedList);
+   } catch (err) {
       res.status(500).send(err.message);
    }
 });
