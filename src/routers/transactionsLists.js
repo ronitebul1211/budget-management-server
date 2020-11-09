@@ -3,8 +3,6 @@ const TransactionsList = require("../models/transactionsList");
 
 const router = new express.Router();
 
-//TODO: query params to response with month status & month debit split by categories
-
 /** GET: transactions list by month, year.
  * success: (200) response with transactions list
  * errors:  (404) list does not exist
@@ -33,8 +31,8 @@ router.get("/api/transactions-lists/:year/:month", async (req, res) => {
 
 /** POST: transaction in the appropriate list by month, year.
  * request body: description, type, totalPayment, paymentMethod, date, category
- * success: (201) response with updated transactions list
- * errors:  (500) - error + message
+ * success: (201) operation succeeds - empty response
+ * errors:  (500) error + message
  */
 router.post("/api/transactions-lists/:year/:month", async (req, res) => {
    const { month, year } = req.params;
@@ -45,16 +43,17 @@ router.post("/api/transactions-lists/:year/:month", async (req, res) => {
       }
       transactionsList.data.push({ ...req.body });
       await transactionsList.save();
-      res.status(201).send(transactionsList);
+      res.status(201).send();
    } catch (err) {
       res.status(500).send(err.message);
    }
 });
 
 /** DELETE: transaction in the appropriate list by month, year, transaction id.
- * success: (200) response with updated transactions list
- *          (204) response without content when the removed transaction was the last in the list (transactions list removed)
- * errors:  (500) error + message
+ *          when the removed transaction was the last in the list (transactions list removed)
+ * success: (200) operation succeeds - empty response
+ * errors:  (404) list / transaction does not exist
+ *          (500) error + message
  */
 router.delete("/api/transactions-lists/:year/:month/:transactionId", async (req, res) => {
    const { month, year, transactionId } = req.params;
@@ -70,10 +69,9 @@ router.delete("/api/transactions-lists/:year/:month/:transactionId", async (req,
       transaction.remove();
       if (transactionsList.data.length === 0) {
          await transactionsList.remove();
-         return res.status(204).send();
       }
       await transactionsList.save();
-      res.status(200).send(transactionsList);
+      res.status(200).send();
    } catch (err) {
       res.status(500).send(err.message);
    }
@@ -81,8 +79,8 @@ router.delete("/api/transactions-lists/:year/:month/:transactionId", async (req,
 
 /** PUT: update transaction in the appropriate list by month, year, transaction id
  * request body: description, type, totalPayment, paymentMethod, date, category
- * success: (200) response with updated transactions list
- *          (404) transactions list / month / year does not exist
+ * success: (200) operation succeeds - empty response
+ *          (404) list / transaction does not exist
  * errors:  (500) error + message
  */
 router.put("/api/transactions-lists/:year/:month/:transactionId", async (req, res) => {
@@ -102,12 +100,10 @@ router.put("/api/transactions-lists/:year/:month/:transactionId", async (req, re
          },
          { new: true, runValidators: true },
       );
-
       if (!updatedTransactionsList) {
          return res.status(404).send();
       }
-
-      res.status(200).send(updatedTransactionsList);
+      res.status(200).send();
    } catch (err) {
       res.status(500).send(err.message);
    }
