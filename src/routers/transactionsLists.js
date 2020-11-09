@@ -9,16 +9,24 @@ const router = new express.Router();
  * success: (200) response with transactions list
  * errors:  (404) list does not exist
  *          (500) error + message
+ * query params: # metadata: -monthStatus: get month status data with requested transactions list
  */
 router.get("/api/transactions-lists/:year/:month", async (req, res) => {
+   const { month, year } = req.params;
    try {
-      const { month, year } = req.params;
       const transactionsList = await TransactionsList.findOne({ month, year });
       if (!transactionsList) {
          return res.status(404).send();
       }
+
+      if (req.query.metadata === "monthStatus") {
+         const monthStatus = await transactionsList.getMonthStatus();
+         return res.status(200).send({ monthStatus, transactionsList });
+      }
+
       res.status(200).send(transactionsList);
    } catch (err) {
+      console.log(err);
       res.status(500).send(err.message);
    }
 });
@@ -29,11 +37,9 @@ router.get("/api/transactions-lists/:year/:month", async (req, res) => {
  * errors:  (500) - error + message
  */
 router.post("/api/transactions-lists/:year/:month", async (req, res) => {
-   //TODO crete first subdoc, than if ok post on list
+   const { month, year } = req.params;
    try {
-      let transactionsList;
-      const { month, year } = req.params;
-      transactionsList = await TransactionsList.findOne({ month, year });
+      let transactionsList = await TransactionsList.findOne({ month, year });
       if (!transactionsList) {
          transactionsList = new TransactionsList({ month, year });
       }
@@ -51,16 +57,17 @@ router.post("/api/transactions-lists/:year/:month", async (req, res) => {
  * errors:  (500) error + message
  */
 router.delete("/api/transactions-lists/:year/:month/:transactionId", async (req, res) => {
+   const { month, year, transactionId } = req.params;
    try {
-      const { month, year, transactionId } = req.params;
       transactionsList = await TransactionsList.findOne({ month, year });
       if (!transactionsList) {
          return res.status(404).send();
       }
-      const transaction = transactionsList.data.id(transactionId).remove();
+      const transaction = transactionsList.data.id(transactionId);
       if (!transaction) {
          return res.status(404).send();
       }
+      transaction.remove();
       if (transactionsList.data.length === 0) {
          await transactionsList.remove();
          return res.status(204).send();
@@ -81,7 +88,7 @@ router.delete("/api/transactions-lists/:year/:month/:transactionId", async (req,
 router.put("/api/transactions-lists/:year/:month/:transactionId", async (req, res) => {
    const { month, year, transactionId } = req.params;
    try {
-      const updatedList = await TransactionsList.findOneAndUpdate(
+      const updatedTransactionsList = await TransactionsList.findOneAndUpdate(
          { month, year, "data._id": transactionId },
          {
             $set: {
@@ -96,11 +103,11 @@ router.put("/api/transactions-lists/:year/:month/:transactionId", async (req, re
          { new: true, runValidators: true },
       );
 
-      if (!updatedList) {
+      if (!updatedTransactionsList) {
          return res.status(404).send();
       }
 
-      res.status(200).send(updatedList);
+      res.status(200).send(updatedTransactionsList);
    } catch (err) {
       res.status(500).send(err.message);
    }
