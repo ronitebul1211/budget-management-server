@@ -3,7 +3,7 @@ const TransactionsList = require("../models/transactionsList");
 
 const router = new express.Router();
 
-/** GET: transactions list by month, year.
+/** GET: transactions list by month, year (sorted by date)
  * success: (200) response with transactions list
  * errors:  (404) list does not exist
  *          (500) error + message
@@ -29,7 +29,7 @@ router.get("/api/transactions-lists/:year/:month", async (req, res) => {
    }
 });
 
-/** POST: transaction in the appropriate list by month, year.
+/** POST: transaction (in sorted by date order) in the appropriate list by month, year
  * request body: description, type, totalPayment, paymentMethod, date, category
  * success: (201) operation succeeds - empty response
  * errors:  (500) error + message
@@ -42,6 +42,9 @@ router.post("/api/transactions-lists/:year/:month", async (req, res) => {
          transactionsList = new TransactionsList({ month, year });
       }
       transactionsList.data.push({ ...req.body });
+      transactionsList.data.sort((a, b) => {
+         return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
+      });
       await transactionsList.save();
       res.status(201).send();
    } catch (err) {
