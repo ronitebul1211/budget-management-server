@@ -69,6 +69,7 @@ router.delete("/api/transactions-lists/:year/:month/:transactionId", async (req,
       transaction.remove();
       if (transactionsList.data.length === 0) {
          await transactionsList.remove();
+         return res.status(200).send();
       }
       await transactionsList.save();
       res.status(200).send();
