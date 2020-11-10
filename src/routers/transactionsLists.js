@@ -5,16 +5,21 @@ const router = new express.Router();
 
 /** GET: transactions list by month, year (sorted by date)
  * success: (200) response with transactions list
- * errors:  (404) list does not exist
- *          (500) error + message
+ *          (204) valid request, list doesn't exist
+ * errors:  (500) error + message
  * query params: # metadata: -monthStatus: get month status data with requested transactions list
  */
 router.get("/api/transactions-lists/:year/:month", async (req, res) => {
    const { month, year } = req.params;
    try {
+      //TODO -> middleware to transactions list request?
+      if (!(month <= 12 && month >= 1) || !(year >= 2020)) {
+         throw new Error("Invalid request");
+      }
+
       const transactionsList = await TransactionsList.findOne({ month, year });
       if (!transactionsList) {
-         return res.status(404).send();
+         return res.status(204).send();
       }
 
       if (req.query.metadata === "monthStatus") {
@@ -24,7 +29,6 @@ router.get("/api/transactions-lists/:year/:month", async (req, res) => {
 
       res.status(200).send(transactionsList);
    } catch (err) {
-      console.log(err);
       res.status(500).send(err.message);
    }
 });

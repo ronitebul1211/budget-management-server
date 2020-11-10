@@ -39,7 +39,7 @@ const transactionsListSchema = mongoose.Schema({
       type: Number,
       required: true,
       validate(month) {
-         return month <= 12;
+         return month <= 12 && month >= 1;
       },
    },
    year: {
