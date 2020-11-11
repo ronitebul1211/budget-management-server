@@ -67,12 +67,13 @@ transactionsListSchema.methods.getMonthStatus = async function () {
       },
    ]);
 
-   const creditAgg = transactionTypeAgg.find((agg) => agg._id === "זכות");
-   const debitAgg = transactionTypeAgg.find((agg) => agg._id === "חובה");
+   const creditAgg = transactionTypeAgg.find((agg) => agg._id === "credit");
+   const debitAgg = transactionTypeAgg.find((agg) => agg._id === "debit");
 
+   console.log(transactionTypeAgg);
    const monthStatus = {
-      credit: !creditAgg ? 0 : creditAgg.sum,
-      debit: !debitAgg ? 0 : debitAgg.sum,
+      credit: creditAgg ? creditAgg.sum : 0,
+      debit: debitAgg ? debitAgg.sum : 0,
    };
    monthStatus.balance = monthStatus.credit - monthStatus.debit;
    return monthStatus;
