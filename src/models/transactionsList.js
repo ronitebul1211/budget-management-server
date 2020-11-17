@@ -69,14 +69,37 @@ transactionsListSchema.methods.getMonthStatus = async function () {
 
    const creditAgg = transactionTypeAgg.find((agg) => agg._id === "credit");
    const debitAgg = transactionTypeAgg.find((agg) => agg._id === "debit");
-
-   console.log(transactionTypeAgg);
    const monthStatus = {
       credit: creditAgg ? creditAgg.sum : 0,
       debit: debitAgg ? debitAgg.sum : 0,
    };
    monthStatus.balance = monthStatus.credit - monthStatus.debit;
    return monthStatus;
+};
+
+/**
+ * @returns add the functionality to get debit distribution splitted by categories of current transactions list
+ */
+transactionsListSchema.methods.getDebitDistribution = async function () {
+   const debitDistributionAgg = await TransactionsList.aggregate([
+      { $match: { _id: this._id } },
+      { $unwind: "$data" },
+      { $match: { "data.type": "debit" } },
+      {
+         $group: {
+            _id: "$data.category",
+            sum: { $sum: "$data.totalPayment" },
+         },
+      },
+   ]);
+
+   const debitDistribution = {};
+
+   debitDistributionAgg.forEach((categoryAgg) => {
+      debitDistribution[categoryAgg._id] = categoryAgg.sum;
+   });
+
+   return debitDistribution;
 };
 
 const TransactionsList = mongoose.model("Transactions-List", transactionsListSchema);
