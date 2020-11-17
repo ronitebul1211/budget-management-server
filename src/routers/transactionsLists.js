@@ -8,11 +8,11 @@ const router = new express.Router();
  *          (204) valid request, list doesn't exist
  * errors:  (500) error + message
  * query params: # metadata: -monthStatus: get month status data with requested transactions list
+ *                           -debitDistribution: get debit distribution data with requested transactions list
  */
 router.get("/api/transactions-lists/:year/:month", async (req, res) => {
    const { month, year } = req.params;
    try {
-      //TODO -> middleware to transactions list request?
       if (!(month <= 12 && month >= 1) || !(year >= 2020)) {
          throw new Error("Invalid request");
       }
@@ -25,6 +25,11 @@ router.get("/api/transactions-lists/:year/:month", async (req, res) => {
       if (req.query.metadata === "monthStatus") {
          const monthStatus = await transactionsList.getMonthStatus();
          return res.status(200).send({ monthStatus, transactionsList });
+      }
+
+      if (req.query.metadata === "debitDistribution") {
+         const debitDistribution = await transactionsList.getDebitDistribution();
+         return res.status(200).send({ debitDistribution, transactionsList });
       }
 
       res.status(200).send(transactionsList);
