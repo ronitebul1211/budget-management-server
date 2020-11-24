@@ -24,12 +24,12 @@ router.get("/api/transactions-lists/:year/:month", async (req, res) => {
 
       if (req.query.metadata === "monthStatus") {
          const monthStatus = await transactionsList.getMonthStatus();
-         return res.status(200).send({ monthStatus, transactionsList });
+         return res.status(200).send({ metadata: monthStatus, transactionsList });
       }
 
       if (req.query.metadata === "debitDistribution") {
          const debitDistribution = await transactionsList.getDebitDistribution();
-         return res.status(200).send({ debitDistribution, transactionsList });
+         return res.status(200).send({ metadata: debitDistribution, transactionsList });
       }
 
       res.status(200).send(transactionsList);
